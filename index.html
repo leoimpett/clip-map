@@ -1,0 +1,106 @@
+
+
+
+
+<head>
+<title>CLIP-MAP</title>
+
+<script src="https://code.jquery.com/jquery-3.7.0.min.js" integrity="sha256-2Pmvv0kuTBOenSvLm6bvfBSSHrUJ+3A7x6P5Ebd07/g=" crossorigin="anonymous"></script>
+
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+crossorigin=""/>
+
+ <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+     integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+     crossorigin=""></script>
+
+ <style type="text/css">
+     #map { height: 100% }
+     #searchBar {
+        position: absolute;
+        top: 25px;
+        left: 25px;
+        z-index: 1000;
+        /* background-color: rgba(255, 255, 255, 0.8); */
+        opacity:0.6;
+     }
+     #searchBar:hover {
+        opacity:1;
+     }
+     #searchBar * {
+        font-size: 1.2em;}
+        #myBtn{
+            display:none;
+        }
+     </style>
+
+    
+<script src="enable-threads.js"></script>
+<script src="./vips/vips.js"></script>
+<script src="umap-js.min.js"></script>
+
+<script src="https://cdn.jsdelivr.net/npm/onnxruntime-web@1.12.0/dist/ort.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@3.17.0/dist/tf.min.js"></script>
+
+
+
+</head>
+
+<body>
+    <div id="searchBar">
+    <input id="input_text" type="text" value="Paris"  />
+    <button id="myBtn" onclick="searchSort()">Map</button>
+</div>
+
+    <script>
+        var input = document.getElementById("input_text");
+        input.addEventListener("keypress", function(event) {
+        if (event.key === "Enter") {
+            event.preventDefault();
+            document.getElementById("myBtn").click();
+        }
+        });
+</script>
+
+
+    <script src="clip-three.js"></script>
+
+    <div id="map"></div>
+
+
+
+
+<script>
+
+
+// load paris.json
+// $.getJSON("paris.json",function(data){
+    // add GeoJSON layer to the map once the file is loaded
+    // L.geoJson(data).addTo(map);
+    // console.log(data)
+// });
+
+
+
+window.MODEL_NAME="clip_vit_32_uint8"
+getWebDataset("paris.json")
+var map = L.map('map',{zoomControl: false}).setView([48.8566, 2.3522], 13);
+//   L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png', {
+  L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  maxZoom: 15,
+  minZoom:11,
+  attribution: 'OpenStreetMap, CartoDB'
+}).addTo(map);
+
+
+L.control.zoom({
+    position: 'bottomright'
+}).addTo(map);
+
+</script>
+
+<!-- 
+<iframe src="http://maps.google.com/maps?q=&layer=c&cbll=31.33519,-89.28720" width="300" height="300" frameborder="0" style="border:0" allowfullscreen></iframe> -->
+
+</body>
