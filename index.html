@@ -1,106 +1,122 @@
-
-
-
-
 <head>
-<title>CLIP-MAP</title>
-
-<script src="https://code.jquery.com/jquery-3.7.0.min.js" integrity="sha256-2Pmvv0kuTBOenSvLm6bvfBSSHrUJ+3A7x6P5Ebd07/g=" crossorigin="anonymous"></script>
-
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
-crossorigin=""/>
-
- <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
-     integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
-     crossorigin=""></script>
-
- <style type="text/css">
-     #map { height: 100% }
-     #searchBar {
-        position: absolute;
-        top: 25px;
-        left: 25px;
-        z-index: 1000;
-        /* background-color: rgba(255, 255, 255, 0.8); */
-        opacity:0.6;
-     }
-     #searchBar:hover {
-        opacity:1;
-     }
-     #searchBar * {
-        font-size: 1.2em;}
-        #myBtn{
-            display:none;
-        }
-     </style>
-
+    <style> body { margin: 0;
+    overflow: hidden;
+    font-family: 'Open Sans', sans-serif;
+    } 
     
-<script src="enable-threads.js"></script>
-<script src="./vips/vips.js"></script>
-<script src="umap-js.min.js"></script>
+    .titleHeader{
+        position:absolute;
+        text-align: center;
+        width:100%;
+        padding-top: 30px;
+        background-color: rgba(255,255,255,.8);
+        z-index: 5;
+    }
 
-<script src="https://cdn.jsdelivr.net/npm/onnxruntime-web@1.12.0/dist/ort.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@3.17.0/dist/tf.min.js"></script>
+    #globeViz{
+        position: absolute;
+        top: 10%;
+        left: 0;
+        width: 100%;
+        height: 90%;
+    }
 
+    </style>
+  
+    <script src="//unpkg.com/three"></script>
+    <script src="//unpkg.com/globe.gl"></script>
+    <script src="//unpkg.com/topojson-client"></script>
+  
+  <!--  <script src="../../dist/globe.gl.js"></script>-->
+  </head>
+  
+  <body>
+    <div class="titleHeader">
+<h1>CLIP-MAP</h1>
+<p>Click on a city to explore heatmaps powered by streetview and CLIP. </p>
 
-
-</head>
-
-<body>
-    <div id="searchBar">
-    <input id="input_text" type="text" value="Paris"  />
-    <button id="myBtn" onclick="searchSort()">Map</button>
 </div>
+  <div id="globeViz"></div>
+  
+  <script>
+    const markerSvg = `<svg viewBox="-4 0 36 36">
+      <circle fill="currentColor" cx="14" cy="14" r="7"></circle>
+    </svg>`;
+  
+    // // Gen random data
+    // const N = 30;
+    // const gData = [...Array(N).keys()].map(() => ({
+    //   lat: (Math.random() - 0.5) * 180,
+    //   lng: (Math.random() - 0.5) * 360,
+    //   size: 7 + Math.random() * 30,
+    //   color: ['red', 'white', 'blue', 'green'][Math.round(Math.random() * 3)]
+    // }));
 
-    <script>
-        var input = document.getElementById("input_text");
-        input.addEventListener("keypress", function(event) {
-        if (event.key === "Enter") {
-            event.preventDefault();
-            document.getElementById("myBtn").click();
+    // World cities: Paris, Rome, London, New York, Tokyo
+    const gData = [
+      {
+        lat: 48.8566,
+        lng: 2.3522,
+        size: 30,
+        color: 'red',
+        href: 'https://leoimpett.github.io/clip-map/map.html?paris'
+      },
+        {
+            lat: 41.9028,
+            lng: 12.4964,
+            size: 30,
+            color: 'lightgreen',
+            href: 'https://leoimpett.github.io/clip-map/map.html?rome'
+        },
+        {
+            lat: 51.5074,
+            lng: 0.1278,
+            size: 30,
+            color: 'yellow',
+            href: 'https://leoimpett.github.io/clip-map/map.html?london'
+        },
+        {
+            lat: 40.7128,
+            lng: -74.0060,
+            size: 30,
+            color: 'blue',
+            href: 'https://leoimpett.github.io/clip-map/map.html?newyork'
+        },
+        {
+            lat: 35.6762,
+            lng: 139.6503,
+            size: 30,
+            color: 'cyan',
+            href: 'https://leoimpett.github.io/clip-map/map.html?tokyo'
         }
-        });
-</script>
+    ];
+  
+    const world = Globe()
+      (document.getElementById('globeViz'))
+      .backgroundColor('rgba(0,0,0,0)')
+      .showGlobe(false)
+      .showAtmosphere(false)
+      .htmlElementsData(gData)
+      .htmlElement(d => {
+        const el = document.createElement('div');
+        el.innerHTML = markerSvg;
+        el.style.color = d.color;
+        el.style.width = `${d.size}px`;
+  
+        el.style['pointer-events'] = 'auto';
+        el.style.cursor = 'pointer';
+        el.onclick = () => window.open(d.href, '_blank');
+        return el;
+      })
+      (document.getElementById('globeViz'));
 
+    fetch('//unpkg.com/world-atlas/land-110m.json').then(res => res.json())
+      .then(landTopo => {
+        world
+          .polygonsData(topojson.feature(landTopo, landTopo.objects.land).features)
+          .polygonCapMaterial(new THREE.MeshLambertMaterial({ color: 'slategray', side: THREE.DoubleSide }))
+          .polygonSideColor(() => 'rgba(0,0,0,0)');
+      });
 
-    <script src="clip-three.js"></script>
-
-    <div id="map"></div>
-
-
-
-
-<script>
-
-
-// load paris.json
-// $.getJSON("paris.json",function(data){
-    // add GeoJSON layer to the map once the file is loaded
-    // L.geoJson(data).addTo(map);
-    // console.log(data)
-// });
-
-
-
-window.MODEL_NAME="clip_vit_32_uint8"
-getWebDataset("paris.json")
-var map = L.map('map',{zoomControl: false}).setView([48.8566, 2.3522], 13);
-//   L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png', {
-  L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
-  maxZoom: 15,
-  minZoom:11,
-  attribution: 'OpenStreetMap, CartoDB'
-}).addTo(map);
-
-
-L.control.zoom({
-    position: 'bottomright'
-}).addTo(map);
-
-</script>
-
-<!-- 
-<iframe src="http://maps.google.com/maps?q=&layer=c&cbll=31.33519,-89.28720" width="300" height="300" frameborder="0" style="border:0" allowfullscreen></iframe> -->
-
-</body>
+  </script>
+  </body>

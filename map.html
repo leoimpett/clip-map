@@ -1,0 +1,202 @@
+
+
+
+
+<head>
+<title>CLIP-MAP</title>
+
+<link rel="icon" type="image/x-icon" href="favicon.ico">
+
+<script src="https://code.jquery.com/jquery-3.7.0.min.js" integrity="sha256-2Pmvv0kuTBOenSvLm6bvfBSSHrUJ+3A7x6P5Ebd07/g=" crossorigin="anonymous"></script>
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons"
+      rel="stylesheet">
+
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+crossorigin=""/>
+
+ <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+     integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+     crossorigin=""></script>
+
+ <style type="text/css">
+     #map { height: 100%;
+        width:100%;
+        position:absolute;
+        left:0;
+        top:0;
+        z-index:0;
+    }
+
+    .searchBox {
+        position: absolute;
+        top: 25px;
+        left: 25px;
+        z-index: 5;
+        opacity:0.6;
+        
+    background: #2f3640;
+    height: 40px;
+    border-radius: 40px;
+    padding: 10px;
+
+}
+
+.searchBox:hover > .searchInput {
+    width: 240px;
+    padding: 0 6px;
+}
+
+.searchBox:hover > .searchButton {
+  background: white;
+  color : #2f3640;
+}
+
+.searchButton {
+    color: white;
+    float: right;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: #2f3640;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    transition: 0.4s;
+}
+
+.searchInput {
+    border:none;
+    background: none;
+    outline:none;
+    float:left;
+    padding: 0;
+    color: white;
+    font-size: 16px;
+    transition: 0.4s;
+    line-height: 40px;
+    width: 0px;
+
+}
+ 
+
+.input_text {
+    border:none;
+    background: none;
+    outline:none;
+    float:left;
+    padding: 0;
+    color: white;
+    font-size: 16px;
+    transition: 0.4s;
+    line-height: 40px;
+    width: 0px;
+
+}
+
+.backgroundMap{
+    /* filter greyscale */
+    filter: grayscale(80%);
+}
+
+
+     </style>
+
+    
+<script src="enable-threads.js"></script>
+<script src="./vips/vips.js"></script>
+<script src="umap-js.min.js"></script>
+
+<script src="https://cdn.jsdelivr.net/npm/onnxruntime-web@1.12.0/dist/ort.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@3.17.0/dist/tf.min.js"></script>
+
+
+
+</head>
+
+<body>
+    <div id="searchBar" class="searchBox">
+    <input id="input_text" class="searchInput" type="text" value="Graffiti, street art"  />   
+    <button id="myBtn" class="searchButton" onclick="searchSort()">
+        <i class="material-icons">
+            search
+        </i>
+    </button>
+</div>
+<div id="spinner-container"><span class="loader"></span></div>
+
+    <script>
+        var input = document.getElementById("input_text");
+        input.addEventListener("keypress", function(event) {
+        if (event.key === "Enter") {
+            event.preventDefault();
+            document.getElementById("myBtn").click();
+        }
+        });
+</script>
+
+
+    <script src="clip-three.js"></script>
+
+    <div id="map"></div>
+
+
+
+
+<script>
+
+
+// load paris.json
+// $.getJSON("paris.json",function(data){
+    // add GeoJSON layer to the map once the file is loaded
+    // L.geoJson(data).addTo(map);
+    // console.log(data)
+// });
+
+const queryString = window.location.search.replace('?','').toLowerCase();
+console.log(queryString);
+
+cities = {"paris": [48.8566969, 2.3514616],
+"rome": [41.90105441179192, 12.483124052733404],
+"london": [51.5073219, -0.1276474],
+"newyork": [40.7486, -73.986],
+"tokyo": [35.6828387, 139.7594549]}
+
+// If the query string is one of the keys of 'cities', then set lat_city and long_city to that
+if (queryString in cities) {
+    lat_city = cities[queryString][0]
+    long_city = cities[queryString][1]
+    chosenCity = queryString
+} else {
+    chosenCity = "paris"
+    lat_city = cities["paris"][0]
+    long_city = cities["paris"][1]
+}
+
+
+
+// Convert latitudes and longitudes to radians - define function
+
+
+window.MODEL_NAME="clip_vit_32_uint8"
+getWebDataset( chosenCity+"_features.json")
+var map = L.map('map',{zoomControl: false}).setView([lat_city, long_city], 13);
+//   L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png', {
+  L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  maxZoom: 15,
+  minZoom:11,
+  attribution: 'OpenStreetMap, CartoDB | <a href="https://leoimpett.github.io/clip-map" target="_blank">Code</a> | <a href="https://leoimpett.github.io/impett-offert-2023" target="_blank">Paper</a> | <a href="https://leoimpett.github.io/clip-map/" target="_blank">Change City</a>',
+  className: 'backgroundMap'
+}).addTo(map);
+
+
+L.control.zoom({
+    position: 'bottomright'
+}).addTo(map);
+
+</script>
+
+<!-- 
+<iframe src="http://maps.google.com/maps?q=&layer=c&cbll=31.33519,-89.28720" width="300" height="300" frameborder="0" style="border:0" allowfullscreen></iframe> -->
+
+</body>

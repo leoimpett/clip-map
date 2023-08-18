@@ -131,14 +131,14 @@ async function initializeWorkers() {
   
   let imageOnnxBlobPromise = downloadBlobWithProgress(window.modelData[MODEL_NAME].image.modelUrl(useQuantizedModel), function(e) {
     let ratio = e.loaded / e.total;
-    imageModelLoadingProgressBarEl.value = ratio;
-    imageModelLoadingMbEl.innerHTML = Math.round(ratio*e.total/1e6)+" MB";
+    // imageModelLoadingProgressBarEl.value = ratio;
+    // imageModelLoadingMbEl.innerHTML = Math.round(ratio*e.total/1e6)+" MB";
   });
 
   let textOnnxBlobPromise = downloadBlobWithProgress(window.modelData[MODEL_NAME].text.modelUrl(useQuantizedModel), function(e) {
     let ratio = e.loaded / e.total;
-    textModelLoadingProgressBarEl.value = ratio;
-    textModelLoadingMbEl.innerHTML = Math.round(ratio*e.total/1e6)+" MB";
+    // textModelLoadingProgressBarEl.value = ratio;
+    // textModelLoadingMbEl.innerHTML = Math.round(ratio*e.total/1e6)+" MB";
   });
 
   let [imageOnnxBlob, textOnnxBlob] = await Promise.all([imageOnnxBlobPromise, textOnnxBlobPromise])
@@ -308,6 +308,8 @@ async function pickDirectory(opts={}) {
       await sleep(100);
     }
 
+
+
     // Wait until embeddingsFileHandle is resolved
 
     await embeddingsFileHandle;
@@ -334,17 +336,28 @@ const jsonString = await response.text();
 
 const onlineData = JSON.parse(jsonString);
 
-console.log(onlineData)
 
 // the data is jsonData[key].embeddings and jsonData[key] metadata - split into two dictionaries
 // for each key in jsonData, add to embeddings and metadata dictionaries
 embeddings = {}
+geometry = {}
 metadata = {}
-for (const [key, value] of Object.entries(onlineData)) {
-    embeddings[key] = value
-    // metadata[key] = value.metadata
+for (const feature of Object.entries(onlineData.features)) {
+        // console.log(feature[1])
+        if(feature[1].properties.photo_exists){
+          // check image_features is defined
+          if(feature[1].properties.image_features){ 
+          key = feature[1].properties.id
+          embeddings[key] = feature[1].properties.image_features[0]
+          geometry[key] = feature[1].geometry.coordinates[0]
+          metadata[key] = [feature[1].properties.photo_lat, feature[1].properties.photo_lng]
+
+          }
+      }
 }
 
+// print length of embeddings
+console.log(Object.keys(embeddings).length)
 
 //   webDataEmbeddingBlob = await downloadBlobWithProgress( url, function(e){console.log(e.loaded/e.total)})
 //   file = webDataEmbeddingBlob;
@@ -395,7 +408,15 @@ for (const [key, value] of Object.entries(onlineData)) {
     // document.getElementById("localImagePanel").style.display = "none";
     
 
-    searchSort();
+    // searchSort();
+
+    // wait until onnxTextSession is defined
+    while (onnxTextSession === undefined) {
+      console.log("Loading model...")
+      await sleep(500);
+    }
+
+    searchSort(); 
 
 
 }
@@ -692,8 +713,11 @@ async function searchSort() {
   // get from input box input_text 
   searchText = document.getElementById("input_text").value;
 
-  console.log(searchText);
-  console.log(modelData[MODEL_NAME].text)
+  // console.log(searchText);
+  // console.log(modelData[MODEL_NAME].text)
+          // hide div spinner-container 
+          console.log('hiding spinner')
+          document.getElementById("spinner-container").style.display = "none";
 
   // let searchTextEmbedding = await modelData[MODEL_NAME].text.embed(searchText, onnxTextSession);
 
@@ -734,11 +758,15 @@ async function searchSort() {
     if (similarity > maxSimilarity) {maxSimilarity = similarity}
   });
 
+// print min and max to console
+console.log("CLIP score range for this search:")
+console.log(minSimilarity, maxSimilarity)
+
   const similarityMap = similarityEntries.map(([path, similarity]) => {
     // path is of the form Paris/ParisImages/48.79108275862069_2.334958620689655_168.jpg
     // split on / and take the first element
-    const latitude = parseFloat(path.split("/")[2].split("_")[0]);
-    const longitude = parseFloat(path.split("/")[2].split("_")[1]);
+    // const latitude = parseFloat(path.split("/")[2].split("_")[0]);
+    // const longitude = parseFloat(path.split("/")[2].split("_")[1]);
     const score = similarity;
     // console.log(path)
     // console.log(similarity)
@@ -751,24 +779,32 @@ async function searchSort() {
   //     radius: 200
   // }).addTo(map);
 
-  
 
-  geodelta = .00345;
-  x1 = latitude - geodelta;
-  x2 = latitude + geodelta;
-  y1 = longitude - geodelta;
-  y2 = longitude + geodelta;
+
+  // geodelta = .00345;
+  // x1 = latitude - geodelta;
+  // x2 = latitude + geodelta;
+  // y1 = longitude - geodelta;
+  // y2 = longitude + geodelta;
+
+    bbox = geometry[path] 
+    // for coord in bbox, swap (x, y) to (y, x)
+    bbox = bbox.map(([x, y]) => [y, x])
+ 
   
   normScore = (score-minSimilarity)/(maxSimilarity-minSimilarity);
   // console.log(normScore)
 
+  if(normScore<.5){myColor = interpolate("#7eb5de",  "#d5e3e2", normScore*2)}
+  else{myColor = interpolate("#d5e3e2", "#eb605b", 2*(normScore-.5))}
 
-  var mylayer = L.polygon([[x1, y1], [x1, y2], [x2, y2], [x2, y1]], {
+
+
+  var mylayer = L.polygon(bbox, {
     // color: 'red',
     stroke:false,
-    // fillColor: getColor(score),
-    fillColor: interpolate("#e3e1bc",  "#c720c4", normScore),
-    fillOpacity: 0.8,
+    fillColor: myColor,
+    fillOpacity: .8,
     radius: 200
 }).addTo(map);
 
@@ -784,7 +820,9 @@ async function searchSort() {
 // Pitch (in degrees) -90 (straight up) to 90 (straight down), default 5
 
 mylayer.on('click', function() { 
-  svurl = "http://maps.google.com/maps?q=&layer=c&cbll=" + latitude.toFixed(14) + ',' + longitude.toFixed(14)
+  [latitude, longitude] = metadata[path]
+  // console.log(latitude, longitude)
+  svurl = "http://maps.google.com/maps?q=&layer=c&cbll=" + latitude  + ',' + longitude 
   window.open(svurl, "_blank")
 
   })
@@ -824,16 +862,17 @@ function interpolate(color1, color2, percent) {
   return "#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
 }
 
-function getColor(d) {
-  return d > .23 ? '#800026' :
-         d > .22  ? '#BD0026' :
-         d > .21  ? '#E31A1C' :
-         d > .20  ? '#FC4E2A' :
-         d > .19   ? '#FD8D3C' :
-         d > .18   ? '#FEB24C' :
-         d > 0   ? '#FED976' :
-                    '#FFEDA0';
-}
+// function getColor(d) {
+//   return d > .24 ? '#ab000e' :
+//           d > .23 ? '#800026' :
+//          d > .22  ? '#BD0026' :
+//          d > .21  ? '#E31A1C' :
+//          d > .20  ? '#FC4E2A' :
+//          d > .19   ? '#FD8D3C' :
+//          d > .18   ? '#FEB24C' :
+//          d > 0   ? '#FED976' :
+//                     '#FFEDA0';
+// }
 
 
 
