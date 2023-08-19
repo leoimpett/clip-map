@@ -410,11 +410,20 @@ console.log(Object.keys(embeddings).length)
 
     // searchSort();
 
+
+
+    // spinner-container show
+    document.getElementById("spinner-container").style.display = "block";
+
     // wait until onnxTextSession is defined
     while (onnxTextSession === undefined) {
       console.log("Loading model...")
       await sleep(500);
     }
+
+
+
+
 
     searchSort(); 
 
@@ -678,6 +687,10 @@ isRendered = false;
 
   // Change this to only fire once - on loading the directory. Handlers can then change the x-y coordinates of the images based on new axis values. 
 async function searchSort() {
+
+
+    // spinner-container show
+    document.getElementById("spinner-container").style.display = "block";
 
   // if(searchBtn){searchBtn.disabled = true}
   
