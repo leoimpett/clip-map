@@ -1,131 +1,57 @@
 <head>
-    <style> body { margin: 0;
-    overflow: hidden;
-    font-family: 'Open Sans', sans-serif;
-    } 
-    
-    .titleHeader{
-        position:absolute;
-        text-align: center;
-        width:100%;
-        padding-top: 30px;
-        background-color: rgba(255,255,255,.8);
-        z-index: 5;
-    }
+  <style> body { margin: 0; overflow: hidden; font-family: 'Open Sans', sans-serif;    
+   .titleHeader {
+    position: absolute;
+    text-align: center;
+    width: 100%;
+    padding-top: 30px;
+    background-color: rgba(255, 255, 255, 0.8);
+    z-index: 5;
+  }} </style>
+  <script src="//unpkg.com/globe.gl"></script>
+  <title>CLIP-map</title>
+</head>
 
-    #globeViz{
-        position: absolute;
-        top: 10%;
-        left: 0;
-        width: 100%;
-        height: 90%;
-    }
+<body>
+  <div class="titleHeader">
+    <h1>CLIP-MAP</h1>
+    <p>Click on a city to explore heatmaps powered by Google Streetview and CLIP, or read our <a href="https://leoimpett.github.io/impett-offert-2023/" target="_blank">paper</a>. </p>
+  </div>
 
-    </style>
-  
-    <script src="//unpkg.com/three"></script>
-    <script src="//unpkg.com/globe.gl"></script>
-    <script src="//unpkg.com/topojson-client"></script>
-  
-  <!--  <script src="../../dist/globe.gl.js"></script>-->
-  </head>
-  
-  <body>
-    <div class="titleHeader">
-<h1>CLIP-MAP</h1>
-<p>Click on a city to explore heatmaps powered by streetview and CLIP. </p>
-
-</div>
   <div id="globeViz"></div>
-  
+
   <script>
-    const markerSvg = `<svg viewBox="-4 0 36 36">
-      <circle fill="currentColor" cx="14" cy="14" r="7"></circle>
-    </svg>`;
-  
-    // // Gen random data
-    // const N = 30;
-    // const gData = [...Array(N).keys()].map(() => ({
-    //   lat: (Math.random() - 0.5) * 180,
-    //   lng: (Math.random() - 0.5) * 360,
-    //   size: 7 + Math.random() * 30,
-    //   color: ['red', 'white', 'blue', 'green'][Math.round(Math.random() * 3)]
-    // }));
+     const markerSvg = `<svg viewBox="-4 0 36 36">
+        <circle fill="currentColor" cx="14" cy="14" r="7"></circle>
+     </svg>`;
 
-    // World cities: Paris, Rome, London, New York, Tokyo
-    const gData = [
-      {
-        lat: 48.8566,
-        lng: 2.3522,
-        size: 30,
-        color: 'red',
-        href: 'https://leoimpett.github.io/clip-map/map.html?paris'
-      },
-        {
-            lat: 41.9028,
-            lng: 12.4964,
-            size: 30,
-            color: 'lightgreen',
-            href: 'https://leoimpett.github.io/clip-map/map.html?rome'
-        },
-        {
-            lat: 51.5074,
-            lng: 0.1278,
-            size: 30,
-            color: 'yellow',
-            href: 'https://leoimpett.github.io/clip-map/map.html?london'
-        },
-        {
-            lat: 40.7128,
-            lng: -74.0060,
-            size: 30,
-            color: 'blue',
-            href: 'https://leoimpett.github.io/clip-map/map.html?newyork'
-        },
-        {
-            lat: 35.6762,
-            lng: 139.6503,
-            size: 30,
-            color: 'cyan',
-            href: 'https://leoimpett.github.io/clip-map/map.html?tokyo'
-        },
-        // johannesburg, -26.207,28.045
-          {
-            lat: -26.207,
-            lng: 28.045,
-            size: 30,
-            color: 'orange',
-            href: 'https://leoimpett.github.io/clip-map/map.html?johannesburg'
-          }
+     const gData = [
+        { lat: 48.8566, lng: 2.3522, size: 30, color: 'red', href: 'https://leoimpett.github.io/clip-map/map.html?paris' },
+        { lat: 41.9028, lng: 12.4964, size: 30, color: 'lightgreen', href: 'https://leoimpett.github.io/clip-map/map.html?rome' },
+        { lat: 51.5074, lng: -0.1278, size: 30, color: 'yellow', href: 'https://leoimpett.github.io/clip-map/map.html?london' },
+        { lat: 40.7128, lng: -74.0060, size: 30, color: 'blue', href: 'https://leoimpett.github.io/clip-map/map.html?newyork' },
+        { lat: 35.6762, lng: 139.6503, size: 30, color: 'cyan', href: 'https://leoimpett.github.io/clip-map/map.html?tokyo' },
+        { lat: -26.207, lng: 28.045, size: 30, color: 'orange', href: 'https://leoimpett.github.io/clip-map/map.html?johannesburg' }
+     ];
 
-    ];
-  
-    const world = Globe()
-      (document.getElementById('globeViz'))
-      .backgroundColor('rgba(0,0,0,0)')
-      .showGlobe(false)
-      .showAtmosphere(false)
-      .htmlElementsData(gData)
-      .htmlElement(d => {
-        const el = document.createElement('div');
-        el.innerHTML = markerSvg;
-        el.style.color = d.color;
-        el.style.width = `${d.size}px`;
-  
-        el.style['pointer-events'] = 'auto';
-        el.style.cursor = 'pointer';
-        el.onclick = () => window.open(d.href, '_blank');
-        return el;
-      })
-      (document.getElementById('globeViz'));
+     const world = Globe()
+        .backgroundColor('rgba(0,0,0,.0)')
+        .showGlobe(true)
+        .showAtmosphere(true)
+        .htmlElementsData(gData)
+        .htmlElement(d => {
+           const el = document.createElement('div');
+           el.innerHTML = markerSvg;
+           el.style.color = d.color;
+           el.style.width = `${d.size}px`;
 
-    fetch('//unpkg.com/world-atlas/land-110m.json').then(res => res.json())
-      .then(landTopo => {
-        world
-          .polygonsData(topojson.feature(landTopo, landTopo.objects.land).features)
-          .polygonCapMaterial(new THREE.MeshLambertMaterial({ color: 'slategray', side: THREE.DoubleSide }))
-          .polygonSideColor(() => 'rgba(0,0,0,0)');
-      });
+           el.style['pointer-events'] = 'auto';
+           el.style.cursor = 'pointer';
+           el.onclick = () => window.open(d.href, '_blank');
+           return el;
+        })
+        .globeImageUrl('Earth_Water.jpg') // Optional, to add a globe texture
+        (document.getElementById('globeViz'));
 
   </script>
-  </body>
+</body>
